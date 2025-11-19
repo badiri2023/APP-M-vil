@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Pong</string>
+    <string name="title_pong"> THE PONG</string>
+    <string name="user_title">User</string>
+    <string name="user_nick">Nick Name</string>
+    <string name="server_question">Server URL</string>
+    <string name="server_input">matrixplay5.ieti.site:443</string>
+    <string name="error_msg"> Error </string>
+    <string name="btn_conect">Connect</string>
+
+</resources>
