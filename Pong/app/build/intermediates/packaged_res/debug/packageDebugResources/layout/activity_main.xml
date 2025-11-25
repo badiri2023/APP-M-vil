@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="#000000"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    tools:ignore="MissingClass">
+    <!-- Titulo -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="280dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="52dp"
+        android:fontFamily="@font/brunoace_regular"
+        android:text="@string/title_pong"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <!-- Contenedor Credenciales -->
+    <LinearLayout
+        android:id="@+id/centerContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintVertical_bias="0.0">
+        <!-- Text Nickname -->
+        <TextView
+            android:id="@+id/userLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/brunoace_regular"
+            android:text="@string/user_title"
+            android:textColor="#FFFFFF" />
+        <!-- Input Nickname -->
+        <EditText
+            android:id="@+id/playerName"
+            android:layout_width="250dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="16dp"
+            android:autofillHints="username"
+            android:background="#FFFFFF"
+            android:ellipsize="none"
+            android:fontFamily="@font/brunoace_regular"
+            android:hint="@string/user_nick"
+            android:inputType="textPersonName"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:textColor="#000000" />
+        <!-- Texto URL -->
+        <TextView
+            android:id="@+id/serverLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/brunoace_regular"
+            android:text="@string/server_question"
+            android:textColor="#FFFFFF" />
+        <!-- Input URL -->
+        <EditText
+            android:id="@+id/serverUrl"
+            android:layout_width="250dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="16dp"
+            android:autofillHints="webAddress"
+            android:background="#FFFFFF"
+            android:ellipsize="none"
+            android:fontFamily="@font/brunoace_regular"
+            android:hint="@string/server_input"
+            android:inputType="textUri"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:text="@string/server_input"
+            android:textColor="#000000" />
+        <!-- Texto Errores -->
+        <TextView
+            android:id="@+id/errorMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/brunoace_regular"
+            android:text="@string/error_msg"
+            android:textColor="#FF4444"
+            android:visibility="gone" />
+    </LinearLayout>
+    <!-- Boton conectar -->
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/button_black_border"
+        android:fontFamily="@font/brunoace_regular"
+        android:text="@string/btn_conect"
+        android:textColor="#FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/centerContainer" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
