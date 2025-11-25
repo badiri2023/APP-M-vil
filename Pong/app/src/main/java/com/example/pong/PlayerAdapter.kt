@@ -8,14 +8,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-// Adaptador para la lista de jugadores (String)
-// Usa ListAdapter para eficiencia automática
+//// ListAdapter que gestiona la lista de jugadores usando DiffUtil para animaciones automáticas
 class PlayerAdapter(
     private val onPlayerClicked: (String) -> Unit
 ) : ListAdapter<String, PlayerAdapter.PlayerViewHolder>(PlayerDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlayerViewHolder {
-        // Asegúrate de que tu layout para la fila se llama 'player_list_item.xml'
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_player, parent, false)
         return PlayerViewHolder(view, onPlayerClicked)
@@ -25,19 +23,13 @@ class PlayerAdapter(
         holder.bind(getItem(position))
     }
 
-    // El ViewHolder que "pinta" cada fila
+    //ViewHolder para cada fla
     class PlayerViewHolder(
         itemView: View,
         val onPlayerClicked: (String) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
-
-        // --- ¡ESTE ES EL CAMBIO! ---
-        // Ahora busca 'R.id.playerName' para que coincida con tu XML.
         private val nameTextView: TextView = itemView.findViewById(R.id.playerName)
-        // --- FIN DEL CAMBIO ---
-
         private var currentPlayerName: String? = null
-
         init {
             itemView.setOnClickListener {
                 currentPlayerName?.let {
@@ -53,7 +45,7 @@ class PlayerAdapter(
     }
 }
 
-// Clase para que ListAdapter sepa qué ha cambiado
+// Clase para que ListAdapter sepa que ha cambiado
 class PlayerDiffCallback : DiffUtil.ItemCallback<String>() {
     override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
         return oldItem == newItem

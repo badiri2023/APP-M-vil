@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:padding="8dp"
     android:background="@drawable/player_item_border">
-
+    <!--Contenedor jugadores disponibles-->
     <TextView
         android:id="@+id/playerName"
         android:layout_width="match_parent"

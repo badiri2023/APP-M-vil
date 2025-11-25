@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
 
                     val intent = Intent(this@MainActivity, PlayerListActivity::class.java)
                     startActivity(intent)
-                    finish() // Cerrar esta Activity
+                    finish()
                 }
 
                 is ConnectionState.Error -> {
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is ConnectionState.Disconnected -> {
-                    // Se desconectó limpiamente (o se cerró la conexión)
+                    // Se desconectó limpiamente o se cerró la conexión
                     // Simplemente reactivamos el botón
                     connectButton.isEnabled = true
                 }

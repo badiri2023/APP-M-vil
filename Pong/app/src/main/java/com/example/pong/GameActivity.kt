@@ -1,120 +1,153 @@
 package com.example.pong
 
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import org.json.JSONObject
 
 class GameActivity : AppCompatActivity() {
 
-    // --- Vistas de Carga (Tu XML) ---
+    // Vistas de Carga
     private lateinit var loadingText: TextView
     private lateinit var loadingBar: ProgressBar
     private lateinit var playerStartText: TextView
 
-    // --- Vistas de Juego (XML Nuevo) ---
+    // Vistas de Juego
     private lateinit var pongGameView: PongGameView
     private lateinit var scoreText: TextView
-    // private lateinit var opponentNameText: TextView // <-- COMENTADA
 
+    //Declarar las vistas para los nombres
+    private lateinit var player1NameText: TextView
+    private lateinit var player2NameText: TextView
+
+    // Variables de Estado
     private var isGameViewLoaded = false
     private var myRole: String = "p1"
+    private var opponentName: String = "Oponente"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setContentView(R.layout.loadingscreen) // <-- 1. Carga la pantalla de carga
-
-        // 2. Encontrar vistas de carga
+        // pantalla de carga
+        setContentView(R.layout.loadingscreen)
         loadingText = findViewById(R.id.loadingText)
         loadingBar = findViewById(R.id.loadingBar)
         playerStartText = findViewById(R.id.playerStartText)
 
-        // 3. Recoger datos del Lobby
-        // val opponentName = intent.getStringExtra("OPPONENT_NAME") ?: "Oponente" // Ya no se usa
+        //Recoger datos del Lobby
+        opponentName = intent.getStringExtra("OPPONENT_NAME") ?: "Oponente"
         myRole = intent.getStringExtra("PLAYER_ROLE") ?: "p1"
 
-        // 4. Animar la barra de carga
+        // Barra de carga progresiva
         val progressAnimator = ObjectAnimator.ofInt(loadingBar, "progress", 0, 100)
         progressAnimator.duration = 6000
         progressAnimator.interpolator = LinearInterpolator()
         progressAnimator.start()
 
-        // 5. Empezar a escuchar al servidor
         observeWebSocket()
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
     }
 
     private fun observeWebSocket() {
 
-        // A. Actualizar texto de "Loading..."
+        //Actualizar texto  "Loading..."
         WebSocketManager.loadingText.observe(this) { text ->
             if (!isGameViewLoaded) {
-                if (text.startsWith("Starts Player")) {
-                    playerStartText.text = text
-                    playerStartText.visibility = View.VISIBLE
-                    loadingText.text = "¡Listos!"
-                } else {
-                    loadingText.text = text
-                }
+                playerStartText.text = text
+                playerStartText.visibility = View.VISIBLE
+                loadingText.text = "¡Listos!"
             }
         }
 
-        // B. Actualizar texto de "3, 2, 1..."
+        //Cuenta regresiva
         WebSocketManager.countdown.observe(this) { value ->
             if (!isGameViewLoaded) {
-                loadingText.text = value
+                loadingText.text = value // Mostramos "3", "2", "1"
                 playerStartText.visibility = View.GONE
             }
         }
 
-        // C. ¡EMPIEZA EL JUEGO! (Llega el primer 'game_state')
+        // Inicio juego
         WebSocketManager.gameState.observe(this) { state ->
+
             if (!isGameViewLoaded) {
                 isGameViewLoaded = true
 
-                // 2. Carga tu layout de juego (asegúrate que se llama así)
+                // Layout del juego
                 setContentView(R.layout.activity_game_play)
 
-                // 3. Encontrar las vistas de Juego
+                //Encontrar las vistas de Juego
                 pongGameView = findViewById(R.id.pongGameView)
                 scoreText = findViewById(R.id.scoreText)
 
-                // --- ¡LÍNEAS COMENTADAS PARA EVITAR EL ERROR! ---
-                // opponentNameText = findViewById(R.id.opponentNameText)
-                // val opponentName = intent.getStringExtra("OPPONENT_NAME") ?: "Oponente"
-                // opponentNameText.text = "vs $opponentName"
-                // --- FIN ---
+                // Encontrar las vistas de los nombres ---
+                player1NameText = findViewById(R.id.player1NameText)
+                player2NameText = findViewById(R.id.player2NameText)
 
+                //Asignar los nombres laterales
+                val myNickname = WebSocketManager.currentNickname ?: "Tú"
+                if (myRole == "p1") {
+                    player1NameText.text = myNickname
+                    player2NameText.text = opponentName
+                } else {
+                    player1NameText.text = opponentName
+                    player2NameText.text = myNickname
+                }
+
+                // Configurar la vista
                 pongGameView.setPlayerRole(myRole)
             }
 
+            // --- Esto se ejecuta CADA VEZ que llega un 'game_state' ---
+            // (Los nombres ya están puestos, solo actualizamos puntuación y canvas)
             scoreText.text = "${state.score1} - ${state.score2}"
             pongGameView.updateState(state)
         }
 
-        // D. FIN DEL JUEGO
-        WebSocketManager.gameOver.observe(this) { message ->
-            if (!isFinishing) {
-                AlertDialog.Builder(this)
-                    .setTitle("Partida Terminada")
-                    .setMessage(message)
-                    .setPositiveButton("Volver al Lobby") { _, _ ->
-                        finish()
-                    }
-                    .setCancelable(false)
-                    .show()
+        // End Game
+        WebSocketManager.gameOver.observe(this) { event ->
+            event?.let {
+                if (!isFinishing) {
+                    goToEndGameScreen(it.winnerName, it.reason)
+                    WebSocketManager.consumeGameOverEvent()
+                    finish()
+                }
+            }
+        }
+
+        // Desconexion (por si acaso)
+        WebSocketManager.connectionState.observe(this) { state ->
+            if (state is ConnectionState.Disconnected || state is ConnectionState.Error) {
+                // si es el servidor quien corta conexion
+                if (isGameViewLoaded && !isFinishing) {
+                    goToEndGameScreen("", "Se ha perdido la conexión con el servidor")
+                }
             }
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        WebSocketManager.gameOver.removeObservers(this)
+    /**
+     * Navega a la pantalla de fin de partida, pasando los datos necesarios.
+     */
+    private fun goToEndGameScreen(winner: String, reason: String) {
+        val intent = Intent(this, EndGameActivity::class.java)
+
+        intent.putExtra("WINNER_NAME", winner)
+        intent.putExtra("REASON", reason)
+        val myNickname = WebSocketManager.currentNickname ?: "Tú"
+        intent.putExtra("MY_NICKNAME", myNickname)
+        intent.putExtra("OPPONENT_NAME", opponentName)
+
+        startActivity(intent)
+        finish()
     }
 }

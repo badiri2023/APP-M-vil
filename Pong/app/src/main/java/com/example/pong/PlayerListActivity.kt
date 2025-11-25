@@ -7,7 +7,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -15,43 +14,68 @@ import org.json.JSONObject
 
 class PlayerListActivity : AppCompatActivity() {
 
-    // Vistas del layout (asegúrate que los IDs coinciden con tu XML)
+    // Vistas del layout (Panel de Reto Saliente)
     private lateinit var playerRecyclerView: RecyclerView
     private lateinit var challengeContainer: LinearLayout
     private lateinit var playerDetailText: TextView
     private lateinit var challengeButton: Button
 
+    // ¡NUEVO! Vistas del Panel de Reto Entrante
+    private lateinit var incomingChallengeContainer: LinearLayout
+    private lateinit var incomingChallengeText: TextView
+    private lateinit var acceptButton: Button
+    private lateinit var rejectButton: Button
+
     private lateinit var playerAdapter: PlayerAdapter
     private var selectedPlayer: String? = null
+    private var incomingChallenger: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Asegúrate de que el nombre aquí coincide con tu archivo XML del lobby
         setContentView(R.layout.vista2)
 
-        // 1. Encontrar las vistas
+        // Vistas necesarias (Panel Saliente)
         playerRecyclerView = findViewById(R.id.playerRecyclerView)
         challengeContainer = findViewById(R.id.challengeContainer)
         playerDetailText = findViewById(R.id.playerDetailText)
         challengeButton = findViewById(R.id.challengeButton)
 
-        // 2. Configurar el Adaptador y el RecyclerView
+        // Encontrar vistas del Panel Entrante
+        incomingChallengeContainer = findViewById(R.id.incomingChallengeContainer)
+        incomingChallengeText = findViewById(R.id.incomingChallengeText)
+        acceptButton = findViewById(R.id.acceptButton)
+        rejectButton = findViewById(R.id.rejectButton)
+
+        // Adaptador y el RecyclerView
         setupRecyclerView()
 
-        // 3. Configurar el botón de "Challenge"
+        // Botón challenge (Saliente)
         challengeButton.setOnClickListener {
             selectedPlayer?.let {
                 challengePlayer(it)
             }
         }
 
-        // 4. Empezar a observar los datos del WebSocketManager
+        // ¡NUEVO! Listeners para los botones Aceptar/Rechazar (Entrante)
+        acceptButton.setOnClickListener {
+            incomingChallenger?.let {
+                sendChallengeResponse(it, true) // Aceptar
+                hideIncomingChallengePanel()
+            }
+        }
+
+        rejectButton.setOnClickListener {
+            incomingChallenger?.let {
+                sendChallengeResponse(it, false) // Rechazar
+                hideIncomingChallengePanel()
+            }
+        }
+
+        // Inicio observacion del WebSocketManager
         observeWebSocket()
     }
 
     private fun setupRecyclerView() {
-        // Necesitarás tener el archivo PlayerAdapter.kt
         playerAdapter = PlayerAdapter { playerName ->
             onPlayerClicked(playerName)
         }
@@ -63,61 +87,59 @@ class PlayerListActivity : AppCompatActivity() {
     private fun onPlayerClicked(playerName: String) {
         selectedPlayer = playerName
         playerDetailText.text = "Retar a: $playerName"
+
+        hideIncomingChallengePanel()
         challengeContainer.visibility = View.VISIBLE
     }
 
-    // --- ¡AQUÍ ESTÁN LOS CAMBIOS! ---
+    // Lista jugadores
     private fun observeWebSocket() {
-        // Observar la LISTA DE JUGADORES
         WebSocketManager.playerList.observe(this) { players ->
             playerAdapter.submitList(players)
-
-            // Ocultar el panel si el jugador seleccionado se desconecta
+            // Borra panel saliente si el jugador se desconecta
             if (selectedPlayer != null && !players.contains(selectedPlayer)) {
                 challengeContainer.visibility = View.GONE
                 selectedPlayer = null
             }
+            // Borra el reto entrante si el retador se desconecta
+            if (incomingChallenger != null && !players.contains(incomingChallenger)) {
+                hideIncomingChallengePanel()
+            }
         }
 
-        // Observar si ALGUIEN NOS RETA
+        // Retos entrantes
         WebSocketManager.challengeReceived.observe(this) { event ->
             event?.let {
-                showChallengeDialog(it.opponentName)
+                // Se muestra el panel
+                showIncomingChallengePanel(it.opponentName)
 
-                // ¡CAMBIO! Le decimos al Manager que ya hemos usado el evento
                 WebSocketManager.consumeChallengeReceivedEvent()
             }
         }
 
-        // Observar si el reto fue RECHAZADO
+        // Rechazo reto
         WebSocketManager.challengeDeclined.observe(this) { event ->
             event?.let {
                 Toast.makeText(this, "${it.opponentName} rechazó tu reto.", Toast.LENGTH_SHORT).show()
-
-                // ¡CAMBIO! Le decimos al Manager que ya hemos usado el evento
                 WebSocketManager.consumeChallengeDeclinedEvent()
             }
         }
 
-        // Observar si el JUEGO EMPIEZA
+        // inicio de juego
         WebSocketManager.gameStart.observe(this) { event ->
             event?.let {
-                Toast.makeText(this, "¡Partida aceptada! Empezando...", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Partida aceptada... Empezando...", Toast.LENGTH_LONG).show()
                 goToGameScreen(it.opponentName, it.role)
-
-                // ¡CAMBIO! Le decimos al Manager que ya hemos usado el evento
                 WebSocketManager.consumeGameStartEvent()
             }
         }
     }
-    // --- FIN DE LOS CAMBIOS ---
 
-
-    // ENVÍA un reto a un oponente
+    // Retar a oponente
     private fun challengePlayer(opponentName: String) {
         val challengeJson = JSONObject()
             .put("type", "challenge")
-            .put("to", opponentName) // <-- Especifica a QUIÉN retas
+            .put("to", opponentName)
         WebSocketManager.sendMessage(challengeJson.toString())
         Toast.makeText(this, "Reto enviado a $opponentName", Toast.LENGTH_SHORT).show()
 
@@ -125,37 +147,39 @@ class PlayerListActivity : AppCompatActivity() {
         selectedPlayer = null
     }
 
-    // MUESTRA el pop-up cuando te retan
-    private fun showChallengeDialog(opponentName: String) {
-        AlertDialog.Builder(this)
-            .setTitle("¡Te han retado!")
-            .setMessage("$opponentName quiere jugar contigo.")
-            .setPositiveButton("Aceptar") { _, _ ->
 
-                // Respondes al reto, especificando a QUIÉN respondes
-                val responseJson = JSONObject()
-                    .put("type", "challenge_response")
-                    .put("to", opponentName)
-                    .put("accepted", true)
-                WebSocketManager.sendMessage(responseJson.toString())
-            }
-            .setNegativeButton("Rechazar") { _, _ ->
-                val responseJson = JSONObject()
-                    .put("type", "challenge_response")
-                    .put("to", opponentName)
-                    .put("accepted", false)
-                WebSocketManager.sendMessage(responseJson.toString())
-            }
-            .setCancelable(false)
-            .show()
+    // Muestra el panel de reto entrante
+    private fun showIncomingChallengePanel(opponentName: String) {
+        incomingChallenger = opponentName
+        incomingChallengeText.text = "¡$opponentName te ha retado!"
+        // Oculta el panel de retar
+        challengeContainer.visibility = View.GONE
+        selectedPlayer = null
+        // Muestra el nuevo panel de reto entrante
+        incomingChallengeContainer.visibility = View.VISIBLE
+    }
+
+    // Oculta el panel de reto entrante
+    private fun hideIncomingChallengePanel() {
+        incomingChallengeContainer.visibility = View.GONE
+        incomingChallenger = null
+    }
+
+    // Envía la respuesta
+    private fun sendChallengeResponse(opponentName: String, accepted: Boolean) {
+        val responseJson = JSONObject()
+            .put("type", "challenge_response")
+            .put("to", opponentName)
+            .put("accepted", accepted)
+        WebSocketManager.sendMessage(responseJson.toString())
     }
 
     // Inicia la GameActivity
     private fun goToGameScreen(opponentName: String, role: String) {
         val intent = Intent(this, GameActivity::class.java)
         intent.putExtra("OPPONENT_NAME", opponentName)
-        intent.putExtra("PLAYER_ROLE", role) // "p1" o "p2"
+        intent.putExtra("PLAYER_ROLE", role)
         startActivity(intent)
-        finish() // Cierra el Lobby
+        finish()
     }
 }

@@ -9,7 +9,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity"
     tools:ignore="MissingClass">
-
+    <!-- Titulo -->
     <TextView
         android:id="@+id/title"
         android:layout_width="280dp"
@@ -23,7 +23,7 @@
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
+    <!-- Contenedor Credenciales -->
     <LinearLayout
         android:id="@+id/centerContainer"
         android:layout_width="wrap_content"
@@ -37,7 +37,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintVertical_bias="0.0">
-
+        <!-- Text Nickname -->
         <TextView
             android:id="@+id/userLabel"
             android:layout_width="wrap_content"
@@ -45,7 +45,7 @@
             android:fontFamily="@font/brunoace_regular"
             android:text="@string/user_title"
             android:textColor="#FFFFFF" />
-
+        <!-- Input Nickname -->
         <EditText
             android:id="@+id/playerName"
             android:layout_width="250dp"
@@ -60,8 +60,7 @@
             android:scrollHorizontally="true"
             android:singleLine="true"
             android:textColor="#000000" />
-
-
+        <!-- Texto URL -->
         <TextView
             android:id="@+id/serverLabel"
             android:layout_width="wrap_content"
@@ -69,7 +68,7 @@
             android:fontFamily="@font/brunoace_regular"
             android:text="@string/server_question"
             android:textColor="#FFFFFF" />
-
+        <!-- Input URL -->
         <EditText
             android:id="@+id/serverUrl"
             android:layout_width="250dp"
@@ -85,7 +84,7 @@
             android:singleLine="true"
             android:text="@string/server_input"
             android:textColor="#000000" />
-
+        <!-- Texto Errores -->
         <TextView
             android:id="@+id/errorMessage"
             android:layout_width="wrap_content"
@@ -95,9 +94,8 @@
             android:text="@string/error_msg"
             android:textColor="#FF4444"
             android:visibility="gone" />
-
     </LinearLayout>
-
+    <!-- Boton conectar -->
     <Button
         android:id="@+id/connectButton"
         android:layout_width="250dp"
@@ -111,6 +109,5 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/centerContainer" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
